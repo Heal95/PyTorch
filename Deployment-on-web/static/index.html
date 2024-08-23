@@ -1,0 +1,83 @@
+<html>
+<head>
+    <!-- Load Vue.js and Axios.js -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <title>Image Classification</title>
+</head>
+<body>
+    <!-- The APP UI -->
+    <div id="app" style="width: 50%; margin: 20px auto">
+        <h1 style="font-size: 36px; font-weight: bold;text-align:center">
+            Image Classification
+        </h1>
+
+        <p style="text-align:center">
+            Select an image for classification using a pre-trained model from
+            <a href="https://pytorch.org/vision/0.9/models.html">
+                torchvision.models:
+            </a>
+            <select v-model="selected_option">
+                <option disabled value="">Please select</option>
+                <option>DenseNet</option>
+                <option>ResNet</option>
+                <option>VGG</option>
+            </select>
+        </p>
+
+        <form id="imageForm" enctype="multipart/form-data" method="POST" style="text-align: center; display: block">
+            <label for="imageFile">Select file:</label>
+            <input id="imageFile" name="file" type="file" style="margin-left: 10px" />
+
+            <img v-if="image" :src="image" style="width: 250px; display: block; margin: 50px auto 10px" />
+            <div v-if="prediction" style="font-size: 32px; font-weight: bold; text-align: center">
+                {{ prediction }}
+            </div>
+            <input v-if="image" type="submit" value="Classify Image" style="margin: 20px 20px" />
+        </form>
+    </div>
+
+    <script>
+        // The Vue application
+        var app = new Vue({
+            el: "#app",
+            data() {
+                return {
+                    selected_option: '',
+                    image: null,
+                    prediction: null,
+                };
+            }
+        });
+
+        // Calling the predict API when the form is submitted
+        document.getElementById("imageForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            
+            // Create FormData object
+            const formData = new FormData(document.getElementById("imageForm"));
+            formData.append('option', app.selected_option);  // Add the selected option to FormData
+
+            axios.post("/predict", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            })
+            .then((response) => {
+                app.prediction = response.data;  // Update prediction
+            })
+            .catch((error) => {
+                console.error('There was an error!', error);
+            });
+        });
+
+        // Display the selected image
+        document.getElementById("imageFile").addEventListener("change", (e) => {
+            const [file] = document.getElementById("imageFile").files;
+            if (file) {
+                app.image = URL.createObjectURL(file);
+            }
+        });
+    </script>
+</body>
+</html>
